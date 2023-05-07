@@ -16,6 +16,7 @@ Este proyecto es una aplicación web basada en Vue.js que te permite administrar
 ## Tecnologías utilizadas
 
 - Vue.js
+- Ant Desing Vue
 - HTML
 - CSS
 - PHP
