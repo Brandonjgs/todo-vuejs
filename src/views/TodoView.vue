@@ -47,10 +47,15 @@
 
     <a-tabs type="card" v-model:activeKey="activeKey">
       <a-tab-pane key="1" tab="Pending">
-        <TodoList @some-event="callBackUpdateTask" prop1="pending" />
+        <TodoList
+          @some-event="callBackUpdateTask"
+          @some-event-2="callBackReloadComp"
+          prop1="pending"
+          :key="keyPending"
+        />
       </a-tab-pane>
       <a-tab-pane key="2" tab="Completed">
-        <TodoList @some-event="callBackUpdateTask" prop1="completed" />
+        <TodoList @some-event="callBackUpdateTask" prop1="completed" :key="keyCompleted" />
       </a-tab-pane>
       <a-tab-pane key="3" tab="All">
         <TodoList @some-event="callBackUpdateTask" prop1="all" />
@@ -68,7 +73,7 @@ import TodoList from './../components/TodoList.vue'
 
 export default defineComponent({
   methods: {
-    /* CallBack para abrir modal y llenar los datos del task */
+    /* CallBack to open modal and fill tasks fields */
     callBackUpdateTask(data) {
       const { id, title, description } = data
       this.formState = reactive({
@@ -81,6 +86,12 @@ export default defineComponent({
       })
 
       this.visible = true
+    },
+
+    callBackReloadComp() {
+      this.keyPending = this.keyPending + 1
+      this.keyCompleted = this.keyCompleted + 1
+      this.keyAll = this.keyAll + 1
     }
   },
   components: {
@@ -91,8 +102,11 @@ export default defineComponent({
     /* ::::: Form ::::: */
     const formRef = ref()
     const visible = ref(false)
+    const keyPending = ref(1)
+    const keyCompleted = ref(1)
+    const keyAll = ref(1)
 
-    /* Estado inicial del form */
+    /* Initial state form */
     const formState = reactive({
       id: '',
       title: '',
@@ -102,7 +116,7 @@ export default defineComponent({
       modalAction: 'Create'
     })
 
-    /* Enviar form para insertar o actualizar tarea */
+    /* Send form to insert or update task */
     const onFormOkUpsert = () => {
       formRef.value
         .validateFields()
@@ -114,16 +128,20 @@ export default defineComponent({
             },
             body: JSON.stringify(values)
           })
-            .then((response) => {
-              // Manejar la respuesta del servidor
-              openNotificationWithIcon('success', 'Task Added', 'The task has been added')
-              visible.value = false
-              formRef.value.resetFields()
-              location.reload()
-              console.log(response)
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.code == 200) {
+                openNotificationWithIcon('success', 'Task saved', 'The task has been saved')
+                visible.value = false
+                formRef.value.resetFields()
+                keyPending.value = keyPending.value + 1
+                console.log(data)
+                return
+              }
+
+              this.openNotificationWithIcon('error', 'Error', 'There has been an error')
             })
             .catch((error) => {
-              // Manejar errores
               openNotificationWithIcon('error', 'Error', 'The task couldnt be added')
               console.error(error)
             })
@@ -148,6 +166,9 @@ export default defineComponent({
     /* ::::: Notifications ::::: */
 
     return {
+      keyPending,
+      keyCompleted,
+      keyAll,
       TodoList,
       activeKey: ref('1'), // Panel init
       size: ref('default'), // Modal size
@@ -163,7 +184,6 @@ export default defineComponent({
       /* ::::: Notifications ::::: */
       openNotificationWithIcon
       /* ::::: Notifications ::::: */
-
     }
   }
 })

@@ -53,7 +53,10 @@
           <template #extra>
             <a-dropdown>
               <template #overlay>
-                <a-menu @click="handleMenuClick">
+                <a-menu
+                  @click="handleMenuClick"
+                  :disabled="item.task_status == 'pending' ? false : true"
+                >
                   <a-menu-item key="1" :id="item.id">
                     <CheckOutlined />
                     Completed
@@ -78,10 +81,17 @@
             <template #title>
               {{ item.title }}
             </template>
-            <template #avatar
-              ><a-avatar
-                src="https://lh3.googleusercontent.com/62OzNxLonba70XxMFP3X3dsdNS9lvG2xf5TqfhYDaw9iFn5as9gVSU23ExfCLoZXkMWA=s360-rw"
-            /></template>
+            <template #avatar v-if="item.task_status == 'pending'">
+              <a-avatar>
+                <template #icon><InfoCircleOutlined /></template>
+              </a-avatar>
+            </template>
+
+            <template #avatar v-else>
+              <a-avatar style="color: #ffff; background-color: #1890ff">
+                <template #icon><CheckCircleOutlined /></template>
+              </a-avatar>
+            </template>
           </a-list-item-meta>
           <!-- {{ item.content }} -->
         </a-list-item>
@@ -96,9 +106,12 @@ import {
   CheckOutlined,
   EditOutlined,
   DeleteOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  InfoCircleOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons-vue'
 import { defineComponent, ref } from 'vue'
+import { notification } from 'ant-design-vue'
 
 export default defineComponent({
   data() {
@@ -132,10 +145,10 @@ export default defineComponent({
         })
     },
 
-    /* Controlamos el menu de acciones de cada tarea */
+    /* Handle menu of actions of every task */
     handleMenuClick(e) {
       switch (e.key) {
-        /* Marcar como completada */
+        /* Mark as completed */
         case '1':
           fetch('http://localhost/todo-vuejs.php?resource=completed', {
             method: 'PUT',
@@ -147,18 +160,29 @@ export default defineComponent({
               task_status: 'completed'
             })
           })
-            .then((response) => {
-              console.log(response)
-              location.reload()
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.code == 200) {
+                console.log(data)
+                this.openNotificationWithIcon(
+                  'success',
+                  'Task Completed',
+                  'The task has been marked as completed'
+                )
+                this.$emit('someEvent2')
+                return
+              }
+
+              this.openNotificationWithIcon('error', 'Error', 'There has been an error')
             })
             .catch((error) => {
               // Manejar errores
-              /* openNotificationWithIcon('error', 'Error', 'The task couldnt be added') */
+              this.openNotificationWithIcon('error', 'Error', 'There has been an error')
               console.error(error)
             })
           break
 
-        /* Editar la tarea */
+        /* Update task modal */
         case '2':
           fetch(`http://localhost/todo-vuejs.php?resource=id`, {
             method: 'POST',
@@ -179,7 +203,7 @@ export default defineComponent({
             })
           break
 
-        /* Eliminar la tarea */
+        /* Delete task */
         case '3':
           fetch('http://localhost/todo-vuejs.php?resource=delete', {
             method: 'PUT',
@@ -191,12 +215,24 @@ export default defineComponent({
               status: 0
             })
           })
-            .then((response) => {
-              console.log(response)
-              location.reload()
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.code == 200) {
+                console.log(data)
+                this.openNotificationWithIcon(
+                  'success',
+                  'Task deleted',
+                  'The task has been deleted'
+                )
+                this.$emit('someEvent2')
+                return
+              }
+
+              this.openNotificationWithIcon('error', 'Error', 'There has been an error')
             })
             .catch((error) => {
               console.error(error)
+              this.openNotificationWithIcon('error', 'Error', 'There has been an error')
             })
           break
       }
@@ -207,18 +243,29 @@ export default defineComponent({
     CheckOutlined,
     EditOutlined,
     DeleteOutlined,
-    HistoryOutlined
+    HistoryOutlined,
+    CheckCircleOutlined,
+    InfoCircleOutlined
   },
   props: {
     prop1: String,
     prop2: String
   },
   setup() {
+    /* ::::: Notifications ::::: */
+    const openNotificationWithIcon = (type, message, description) => {
+      notification[type]({
+        message: message,
+        description: description
+      })
+    }
+    /* ::::: Notifications ::::: */
+
     const pagination = {
       onChange: (page) => {
         console.log(page)
       },
-      pageSize: 3
+      pageSize: 5
     }
 
     const value = ref('')
@@ -226,7 +273,11 @@ export default defineComponent({
     return {
       value1: ref(null),
       pagination,
-      value
+      value,
+
+      /* ::::: Notifications ::::: */
+      openNotificationWithIcon
+      /* ::::: Notifications ::::: */
     }
   }
 })
