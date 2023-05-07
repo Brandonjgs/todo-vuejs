@@ -4,6 +4,8 @@
 
 Este proyecto es una aplicación web basada en Vue.js que te permite administrar tus tareas pendientes. Puedes crear nuevas tareas, marcarlas como completadas, editar su contenido y eliminarlas. Es una forma sencilla y eficiente de mantener un seguimiento de tus actividades diarias.
 
+![Vue.js Logo](./src/assets/logo.svg)
+
 ## Características
 
 - Crear nuevas tareas
