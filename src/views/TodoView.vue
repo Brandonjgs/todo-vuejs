@@ -16,17 +16,15 @@
       </a-button>
       <a-modal
         v-model:visible="visible"
-        title="Add new task"
-        ok-text="Create"
+        :title="formState.modalTitle"
+        :ok-text="formState.modalAction"
         cancel-text="Cancel"
-        @ok="onOk"
+        @ok="onFormOkUpsert"
+        @cancel="onFormCancel"
       >
         <a-form ref="formRef" :model="formState" layout="vertical" name="form_in_modal">
-          <a-form-item
-            name="id"
-            label="ID"
-          >
-            <a-input v-model:value="formState.id" :readonly='true' />
+          <a-form-item name="id" label="ID">
+            <a-input v-model:value="formState.id" :readonly="true" />
           </a-form-item>
           <a-form-item
             name="title"
@@ -48,10 +46,14 @@
     <!-- ::::: Add Button ::::: -->
 
     <a-tabs type="card" v-model:activeKey="activeKey">
-      <a-tab-pane key="1" tab="Pending"> Pending </a-tab-pane>
-      <a-tab-pane key="2" tab="Completed"> Completed </a-tab-pane>
+      <a-tab-pane key="1" tab="Pending">
+        <TodoList @some-event="callBackUpdateTask" prop1="pending" />
+      </a-tab-pane>
+      <a-tab-pane key="2" tab="Completed">
+        <TodoList @some-event="callBackUpdateTask" prop1="completed" />
+      </a-tab-pane>
       <a-tab-pane key="3" tab="All">
-        <TodoList @some-event="callback" prop1="completed" prop2="valor2" />
+        <TodoList @some-event="callBackUpdateTask" prop1="all" />
       </a-tab-pane>
     </a-tabs>
   </a-card>
@@ -66,20 +68,19 @@ import TodoList from './../components/TodoList.vue'
 
 export default defineComponent({
   methods: {
-    callback(data) {
-
-      const { id, title, description } = data;
+    /* CallBack para abrir modal y llenar los datos del task */
+    callBackUpdateTask(data) {
+      const { id, title, description } = data
       this.formState = reactive({
         id: id,
         title: title,
         description: description,
-        modifier: 'public'
+        modifier: 'public',
+        modalTitle: 'Update Task',
+        modalAction: 'Update'
       })
-      this.visible = true
 
-      console.log('parent')
-      console.log(data) 
-      
+      this.visible = true
     }
   },
   components: {
@@ -90,14 +91,19 @@ export default defineComponent({
     /* ::::: Form ::::: */
     const formRef = ref()
     const visible = ref(false)
+
+    /* Estado inicial del form */
     const formState = reactive({
       id: '',
       title: '',
       description: '',
-      modifier: 'public'
+      modifier: 'public',
+      modalTitle: 'Add Task',
+      modalAction: 'Create'
     })
-    const onOk = () => {
 
+    /* Enviar form para insertar o actualizar tarea */
+    const onFormOkUpsert = () => {
       formRef.value
         .validateFields()
         .then((values) => {
@@ -126,6 +132,10 @@ export default defineComponent({
           console.log('Validate Failed:', info)
         })
     }
+
+    const onFormCancel = () => {
+      formRef.value.resetFields()
+    }
     /* ::::: Form ::::: */
 
     /* ::::: Notifications ::::: */
@@ -139,18 +149,21 @@ export default defineComponent({
 
     return {
       TodoList,
-      activeKey: ref('3'),
+      activeKey: ref('1'), // Panel init
+      size: ref('default'), // Modal size
 
       /* ::::: Form ::::: */
       formState,
       formRef,
       visible,
-      onOk,
+      onFormOkUpsert,
+      onFormCancel,
       /* ::::: Form ::::: */
 
       /* ::::: Notifications ::::: */
       openNotificationWithIcon
       /* ::::: Notifications ::::: */
+
     }
   }
 })

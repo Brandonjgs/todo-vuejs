@@ -5,13 +5,30 @@
       <a-col :flex="6">
         <a-input-search
           v-model:value="value"
-          placeholder="input search text"
+          placeholder="Search task..."
           enter-button
           @search="onSearch"
         />
       </a-col>
     </a-row>
     <!-- ::::: Search ::::: -->
+
+    <!-- ::::: Order By ::::: -->
+    <a-row type="flex" justify="end" align="top" :style="{ paddingTop: '10px' }">
+      <a-select
+        ref="select"
+        style="width: 120px"
+        v-model:value="value1"
+        @change="onSearch"
+        placeholder="Order By"
+      >
+        <a-select-option value="title">Title</a-select-option>
+        <a-select-option value="description">Description</a-select-option>
+        <a-select-option value="created">Created</a-select-option>
+        <a-select-option value="updated">Updated</a-select-option>
+      </a-select>
+    </a-row>
+    <!-- ::::: Order By ::::: -->
 
     <a-list
       item-layout="vertical"
@@ -59,7 +76,7 @@
           </template>
           <a-list-item-meta :description="item.description">
             <template #title>
-              <a :href="item.href">{{ item.title }}</a>
+              {{ item.title }}
             </template>
             <template #avatar
               ><a-avatar
@@ -83,33 +100,28 @@ import {
 } from '@ant-design/icons-vue'
 import { defineComponent, ref } from 'vue'
 
-/* const listData = []
-for (let i = 0; i < 23; i++) {
-  listData.push({
-    href: 'https://www.antdv.com/',
-    title: `ant design vue part ${i}`,
-    avatar:
-      'https://lh3.googleusercontent.com/62OzNxLonba70XxMFP3X3dsdNS9lvG2xf5TqfhYDaw9iFn5as9gVSU23ExfCLoZXkMWA=s360-rw',
-    description:
-      'Ant Design, a design language for background applications, is refined by Ant UED Team. We supply a series of design principles, practical patterns and high quality design resources (Sketch and Axure), to help people cre We supply a series of design principles, practical patterns and high quality design resources (Sketch and Axure), to help people cre We supply a series of design principles, practical patterns and high quality design resources (Sketch and Axure), to help people cre',
-    content:
-      'We supply a series of design principles, practical patterns and high quality design resources (Sketch and Axure), to help people create their product prototypes beautifully and efficiently.'
-  })
-} */
-
 export default defineComponent({
   data() {
     return {
-      todos: [] // Asegúrate de haber declarado la propiedad "todos" aquí
+      todos: []
     }
   },
   mounted() {
-    this.fetchTodos()
     this.onSearch()
   },
   methods: {
-    fetchTodos() {
-      fetch(`http://localhost/todo-vuejs.php?resource=todos&task_status=${this.prop1}`)
+    onSearch() {
+      fetch('http://localhost/todo-vuejs.php?resource=todosList', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          task_status: this.prop1,
+          search_value: this.value,
+          order_by: this.value1
+        })
+      })
         .then((response) => response.json())
         .then((data) => {
           this.todos = data
@@ -120,20 +132,10 @@ export default defineComponent({
         })
     },
 
-    onSearch(searchValue) {
-      this.todos = [...this.todos, { title: '1aaaaa' }]
-      console.log(this.todos)
-      console.log('use value', searchValue)
-      console.log(this.prop1)
-      /* this.$emit('someEvent') */
-    },
-
+    /* Controlamos el menu de acciones de cada tarea */
     handleMenuClick(e) {
-      console.log('click', e)
-      console.log('click', e.item.id)
-      console.log('click', e.key)
-
       switch (e.key) {
+        /* Marcar como completada */
         case '1':
           fetch('http://localhost/todo-vuejs.php?resource=completed', {
             method: 'PUT',
@@ -156,6 +158,7 @@ export default defineComponent({
             })
           break
 
+        /* Editar la tarea */
         case '2':
           fetch(`http://localhost/todo-vuejs.php?resource=id`, {
             method: 'POST',
@@ -176,6 +179,7 @@ export default defineComponent({
             })
           break
 
+        /* Eliminar la tarea */
         case '3':
           fetch('http://localhost/todo-vuejs.php?resource=delete', {
             method: 'PUT',
@@ -192,8 +196,6 @@ export default defineComponent({
               location.reload()
             })
             .catch((error) => {
-              // Manejar errores
-              /* openNotificationWithIcon('error', 'Error', 'The task couldnt be added') */
               console.error(error)
             })
           break
@@ -220,13 +222,9 @@ export default defineComponent({
     }
 
     const value = ref('')
-    /* const onSearch = (searchValue) => {
-      console.log('use value', todos)
-      console.log('use value', searchValue)
-      console.log('or use this.value', value.value)
-    } */
 
     return {
+      value1: ref(null),
       pagination,
       value
     }
